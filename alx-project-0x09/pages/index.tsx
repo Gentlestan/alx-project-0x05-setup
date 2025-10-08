@@ -1,17 +1,30 @@
 import React, { useState } from "react";
 import ImageCard from "@/components/common/ImageCard";
-import { ImageProps } from "@/interfaces";
-
 
 const Home: React.FC = () => {
-  const [prompt, setPrompt] = useState<string>("")
-  const [imageUrl, setImageUrl] = useState<string>("")
-  const [generatedImages, setGeneratedImages] = useState<ImageProps[]>([])
-  const [isloadiing, setIsoading] = useState<boolean>(false)
+  const [prompt, setPrompt] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleGenerateImage = async () => {
-    console.log("Generating Images")
-     console.log(process.env.NEXT_PUBLIC_GPT_API_KEY)
+    try {
+      setIsLoading(true);
+      const resp = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!resp.ok) throw new Error("Failed to generate image");
+      const data = await resp.json();
+      setImageUrl(data.imageUrl);
+      //console.log("API response:", data)
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,15 +45,22 @@ const Home: React.FC = () => {
           />
           <button
             onClick={handleGenerateImage}
+            disabled={isLoading}
             className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
           >
-            {/* {isLoading ? "Loading..." : "Generate Image"} */}
-            Generate Image
+            {isLoading ? "Loading..." : "Generate Image"}
           </button>
         </div>
-        {imageUrl && <ImageCard action={() => setImageUrl(imageUrl)} imageUrl={imageUrl} prompt={prompt} />}
+
+        {imageUrl && (
+          <ImageCard
+            action={() => setImageUrl(imageUrl)}
+            imageUrl={imageUrl}
+            prompt={prompt}
+          />
+        )}
       </div>
-     </div>
+    </div>
   );
 };
 
