@@ -1,41 +1,25 @@
 import ImageCard from "@/components/common/ImageCard";
+import useFetchData from "@/hooks/useFetchData";
 import { ImageProps } from "@/interfaces";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const Home: React.FC = () => {
   const [prompt, setPrompt] = useState<string>("");
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [generatedImages, setGeneratedImages] = useState<ImageProps[]>(
-    []
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const { isLoading, responseData, generatedImages, fetchData } = useFetchData<any, { prompt: string}>();
+
+  const handleGenerateImage =  () => {
+    fetchData('/api/generate-image', { prompt })
+  }
 
 
-  const handleGenerateImage = async () => {
-    setIsLoading(true);
-    const resp = await fetch('/api/generate-image', {
-      method: 'POST',
-      body: JSON.stringify({
-        prompt
-      }),
-      headers: {
-        'Content-type': 'application/json'
-      }
-    })
-
-
-    if (!resp.ok) {
-      setIsLoading(false)
-      return;
+  useEffect(() => {
+    if (!isLoading) {
+      setImageUrl(responseData?.message)
     }
+  }, [isLoading])
 
-    const data = await resp.json()
-    console.log("API response:", data);
 
-    setIsLoading(false)
-    setImageUrl(data?.imageUrl);
-    setGeneratedImages((prev) => [...prev, { imageUrl: data?.imageUrl, prompt }])
-  };
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-gray-100 p-4">
@@ -63,7 +47,7 @@ const Home: React.FC = () => {
           </button>
         </div>
 
-        {imageUrl && <ImageCard action={() => setImageUrl(imageUrl)} imageUrl={imageUrl} prompt={prompt} />}
+        {responseData?.message && <ImageCard action={() => setImageUrl( imageUrl)} imageUrl={imageUrl} prompt={prompt} />}
       </div>
       {
         generatedImages.length ? (
@@ -92,3 +76,4 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
